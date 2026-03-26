@@ -89,24 +89,92 @@
  */
 export function prepareOrder(item, prepTime) {
   // Your code here
+
+  return new Promise((res,rej)=>{
+
+    if(!item || item === null || item.trim().length === 0){
+      return rej(new Error("Item name required!"))
+    }
+    if(Number.isNaN(prepTime) || typeof prepTime !== "number" || prepTime <= 0){
+      return rej(new Error("Invalid prep time!"))
+    }
+
+    setTimeout(()=>{
+      res({ item, ready: true, prepTime })
+    }, prepTime)
+
+  })
+
+  
 }
 
 export function prepareBatch(items) {
   // Your code here
+  const promises = [];
+
+  for (const {name, prepTime} of items) {
+      promises.push(prepareOrder(name, prepTime))
+  }
+
+  return Promise.all(promises)
 }
 
 export function getFirstReady(items) {
   // Your code here
+
+  if(items.length === 0){
+    return Promise.reject(new Error("No items to prepare!"))
+  }
+
+  return Promise.race(
+    items.map(({name, prepTime})=> prepareOrder(name, prepTime))
+  )
 }
 
 export function prepareSafeBatch(items) {
   // Your code here
+  return Promise.allSettled(
+    items.map(({name, prepTime})=> prepareOrder(name, prepTime))
+  ).then(results=>{
+    return results.map(r=>{
+      if(r.status === "fulfilled"){
+        return { status: "fulfilled", value: r.value }
+      }
+      return { status: "rejected", reason: r.reason.message }
+    })
+  })
+  
 }
 
 export function deliverWithTimeout(orderPromise, timeoutMs) {
   // Your code here
+  if(timeoutMs<= 0){
+    return Promise.reject(new Error("Invalid timeout!"))
+  }
+
+  const timeoutPromise = new Promise((_, rej)=>{
+    setTimeout(()=>{
+      return rej(new Error("Delivery timeout!"))
+    }, timeoutMs)
+  })
+
+  return Promise.race([orderPromise, timeoutPromise])
 }
 
-export function batchWithRetry(items, maxRetries) {
+export async function batchWithRetry(items, maxRetries) {
   // Your code here
+
+  let errorMessage
+  for (let i = 0; i <= maxRetries; i++) {
+      try {
+        const result = await prepareBatch(items)
+
+        return result
+
+      } catch (error) {
+        errorMessage = error
+      }
+  }
+
+  throw errorMessage
 }

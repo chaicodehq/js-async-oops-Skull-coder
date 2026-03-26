@@ -72,7 +72,85 @@
  *   isLassiStand({});                       // => false
  */
 export function LassiStand(name, city) {
-  // Your code here
+  this.name = name;
+  this.city = city;
+  this.menu = [];
+  this.orders = [];
+  this._nextOrderId = 1;
+}
+
+LassiStand.prototype.addFlavor = function (flavor, price) {
+  const hasFlavor = this.menu.some((obj) => obj.flavor === flavor);
+
+  if (hasFlavor || price <= 0) {
+    return -1;
+  }
+
+  this.menu.push({ flavor, price });
+
+  return this.menu.length;
+};
+
+LassiStand.prototype.takeOrder = function (customerName, flavor, quantity) {
+  let menuObj;
+
+  for (let i = 0; i < this.menu.length; i++) {
+    if(this.menu[i].flavor === flavor){
+      menuObj = this.menu[i]
+      break;
+    }
+    
+  }
+
+  if(!menuObj || quantity <= 0){
+    return -1
+  }
+
+  const order = {
+    id: this._nextOrderId++,
+    customer: customerName,
+    flavor,
+    quantity,
+    total: menuObj.price * quantity,
+    status: "pending"
+  }
+
+  this.orders.push(order)
+
+  return order.id
+};
+
+LassiStand.prototype.completeOrder = function(orderId){
+  for (let i = 0; i < this.orders.length; i++) {
+    const order = this.orders[i];
+
+    if(order.id === orderId){
+
+      if(order.status === "pending"){
+        this.orders[i].status = "completed"
+        return true
+      }
+      return false
+      
+      
+    }
+    
+  }
+
+  return false
+}
+
+LassiStand.prototype.getRevenue = function(){
+  return this.orders.reduce((acc, order)=>{
+    if(order.status === "completed"){
+      return acc + order.total 
+    }
+    return acc
+  }, 0)
+}
+
+LassiStand.prototype.getMenu = function(){
+  return [...this.menu]
 }
 
 // Add prototype methods here:
@@ -84,4 +162,6 @@ export function LassiStand(name, city) {
 
 export function isLassiStand(obj) {
   // Your code here
+
+  return obj instanceof LassiStand
 }
